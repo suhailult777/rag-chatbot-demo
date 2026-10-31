@@ -1,49 +1,129 @@
 <!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DEMO – AI Enquiry Assistant for a Coaching Institute (sample data)</title>
-<meta name="description" content="Demo RAG chatbot that answers only from an institute's own documents and cites its sources. Fictional institute, sample data.">
-<style>
-:root{--b:#2563eb;--bg:#f4f6fb;--card:#fff;--mut:#64748b}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:#0f172a}
-.banner{background:#fef3c7;border-bottom:1px solid #f59e0b;padding:8px 14px;font-size:14px;text-align:center}
-header{max-width:900px;margin:18px auto 0;padding:0 14px}h1{font-size:22px;margin:0}header p{margin:4px 0 0;color:var(--mut)}
-main{max-width:900px;margin:14px auto;padding:0 14px;display:grid;grid-template-columns:1fr;gap:14px}
-.card{background:var(--card);border-radius:14px;box-shadow:0 1px 3px #0001;padding:14px}
-#log{height:52vh;min-height:320px;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:4px}
-.m{max-width:85%;padding:10px 12px;border-radius:12px;line-height:1.45;white-space:pre-wrap}
-.u{align-self:flex-end;background:var(--b);color:#fff}.a{align-self:flex-start;background:#eef2ff}
-.src{margin-top:6px;font-size:12.5px;color:#334155}.src b{color:#1e3a8a}
-form{display:flex;gap:8px;margin-top:10px}input{flex:1;padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px}
-button{padding:10px 14px;border:0;border-radius:10px;background:var(--b);color:#fff;font-size:15px;cursor:pointer}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.chip{background:#e2e8f0;color:#0f172a;font-size:13px;padding:6px 10px;border-radius:999px}
-details summary{cursor:pointer;font-weight:600}.doc h3{margin:12px 0 4px;font-size:15px}.doc h4{margin:8px 0 2px;font-size:13.5px}.doc p{margin:0;font-size:13.5px;color:#334155}
-.tag{display:inline-block;background:#fee2e2;color:#991b1b;font-size:11px;padding:2px 6px;border-radius:6px;margin-left:6px}
-footer{max-width:900px;margin:0 auto 24px;padding:0 14px;color:var(--mut);font-size:13px}
-</style></head><body>
-<div class="banner">⚠️ <b>DEMO ONLY.</b> "DemoPrep Academy" is a <b>fictional</b> institute. All fees, timings and policies below are <b>made-up sample data</b>.</div>
-<header><h1>🎓 DemoPrep Academy – AI Enquiry Assistant <span class="tag">DEMO</span></h1>
-<p>Answers student and parent questions <b>only from the institute's own documents</b>, and shows which document each answer came from. If the answer isn't in the documents, it says so instead of guessing.</p></header>
-<main>
-<section class="card">
-<div id="log" aria-live="polite"></div>
-<form id="f"><input id="q" placeholder="Ask about fees, timings, refunds, hostel, scholarships…" autocomplete="off"><button>Ask</button></form>
-<div class="chips" id="chips"></div>
-</section>
-<section class="card"><details><summary>📄 View the source documents the bot uses (SAMPLE DATA)</summary><div id="docs" class="doc"></div></details></section>
-</main>
-<footer>How it works: the documents are split into sections, indexed with BM25 keyword retrieval in your browser, and the best-matching passages are returned with numbered citations. No data leaves this page. For a real business, the same setup runs on their brochure, fee sheet, FAQs or website, on the website or on WhatsApp, and can use an LLM to write the answers in a more natural way.<br>Demo built by Mohd Suhail Idrisi · <a href="https://github.com/suhailult777">github.com/suhailult777</a></footer>
-<script src="docs.js"></script><script src="rag.js"></script>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DemoPrep Academy · AI Enquiry Assistant (Demo)</title>
+<meta name="description" content="A demo AI enquiry assistant that answers only from an institute's own documents and cites every source. Fictional institute, sample data.">
+<meta name="theme-color" content="#F7F4EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171512" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 <script>
-const ix=buildIndex(DOCS),log=document.getElementById('log');
-function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function add(cls,html){const d=document.createElement('div');d.className='m '+cls;d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
-function ask(q){if(!q.trim())return;add('u',esc(q));const a=answer(ix,q);
- let h=esc(a.text);if(a.sources.length)h+='<div class="src">Sources: '+a.sources.map(s=>'<b>['+s.n+']</b> '+esc(s.file)+' › '+esc(s.section)).join(' &nbsp; ')+'</div>';
- else h+='<div class="src">Sources: none found in the documents</div>';
- setTimeout(()=>add('a',h),250)}
-document.getElementById('f').onsubmit=e=>{e.preventDefault();const i=document.getElementById('q');ask(i.value);i.value=''};
-["What is the fee for NEET?","Weekend batch timings?","Can I get a refund?","Is there a scholarship?","Do you have a hostel?","Who won the cricket match?"].forEach(t=>{const b=document.createElement('button');b.className='chip';b.textContent=t;b.type='button';b.onclick=()=>ask(t);document.getElementById('chips').appendChild(b)});
-document.getElementById('docs').innerHTML=DOCS.map(d=>'<h3>'+esc(d.file)+' <span class="tag">SAMPLE DATA</span></h3>'+d.sections.map(s=>'<h4>'+esc(s.h)+'</h4><p>'+esc(s.t)+'</p>').join('')).join('');
-add('a','Hi! 👋 I\'m the (demo) enquiry assistant for DemoPrep Academy, Ameerpet. Ask me about fees, batch timings, scholarships, refunds, hostel or admissions.\n<i>(Fictional institute, sample data.)</i>');
-</script></body></html>
+  (function(){var p=new URLSearchParams(location.search).get('theme');var s=null;try{s=localStorage.getItem('theme')}catch(e){}
+  var t=p||s||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;})();
+</script>
+</head>
+<body>
+<div class="backdrop" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <a class="brand" href="./" aria-label="DemoPrep Academy home">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="9" fill="currentColor"/><path d="M10 9.5h5.2c4.3 0 7.3 2.7 7.3 6.5s-3 6.5-7.3 6.5H10z" fill="none" stroke="var(--mark-ink)" stroke-width="2.4"/><circle cx="15.4" cy="16" r="1.9" fill="var(--mark-ink)"/></svg>
+      </span>
+      <span class="brand__name">DemoPrep<span class="full"> Academy</span></span>
+      <span class="pill" tabindex="0" aria-describedby="pill-tip">Demo
+        <span class="pill__tip" role="tooltip" id="pill-tip">Fictional institute. All fees, timings and policies are sample data.</span>
+      </span>
+    </a>
+    <div class="actions">
+      <div class="seg" role="tablist" aria-label="Preview mode">
+        <button role="tab" id="tab-chat" aria-selected="true" aria-controls="view-chat">Chat</button>
+        <button role="tab" id="tab-site" aria-selected="false" aria-controls="view-site"><span class="hide-sm">See it on your website</span><span class="show-sm">Widget</span></button>
+      </div>
+      <button class="icon-btn" id="theme" aria-label="Toggle dark mode" title="Toggle theme">
+        <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="view-chat" class="view" role="tabpanel" aria-labelledby="tab-chat">
+  <div class="column">
+    <section class="hero" id="hero">
+      <p class="eyebrow">AI enquiry assistant</p>
+      <h1>Ask anything about <em>admissions</em>.</h1>
+      <p class="lede">Answers come only from the institute's own documents, with a citation for every claim. If it isn't in the documents, the assistant says so.</p>
+      <div class="chips" id="chips"></div>
+    </section>
+    <ol class="thread" id="thread" aria-live="polite" aria-label="Conversation"></ol>
+  </div>
+
+  <div class="composer-dock">
+    <form class="composer" id="composer">
+      <label class="sr-only" for="input">Ask a question</label>
+      <textarea id="input" rows="1" placeholder="Ask about fees, batch timings, refunds…" autocomplete="off"></textarea>
+      <button class="send" id="send" type="submit" aria-label="Send" disabled>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>
+      </button>
+    </form>
+    <div class="dock-meta">
+      <span><kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line</span>
+      <button class="linkish" id="open-docs" type="button">View sample documents</button>
+    </div>
+    <footer class="credit">Built by <strong>Mohd Suhail Idrisi</strong> · <a href="https://github.com/suhailult777" target="_blank" rel="noopener">GitHub</a> · <a href="mailto:suhailult123@gmail.com">suhailult123@gmail.com</a></footer>
+  </div>
+</main>
+
+<main id="view-site" class="view view--site" role="tabpanel" aria-labelledby="tab-site" hidden>
+  <div class="site-intro">
+    <p class="eyebrow">Embeddable widget</p>
+    <h2>One line of code. <em>Every enquiry answered.</em></h2>
+    <p class="lede">This is how the assistant would sit on your own website. Tap the bubble to try it.</p>
+  </div>
+  <div class="browser" aria-label="Example website with chat widget">
+    <div class="browser__bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">demoprep-academy.example</span></div>
+    <div class="browser__body">
+      <nav class="mock-nav"><span class="mock-logo"><span class="brand__mark sm" aria-hidden="true"><svg viewBox="0 0 32 32" width="20" height="20"><rect width="32" height="32" rx="9" fill="currentColor"/><path d="M10 9.5h5.2c4.3 0 7.3 2.7 7.3 6.5s-3 6.5-7.3 6.5H10z" fill="none" stroke="var(--mark-ink)" stroke-width="2.6"/></svg></span>DemoPrep</span><span class="mock-links"><i></i><i></i><i></i></span><span class="mock-cta">Apply</span></nav>
+      <div class="mock-hero">
+        <div>
+          <p class="mock-kicker">JEE · NEET · EAPCET</p>
+          <p class="mock-h">Small batches.<br>Serious results.</p>
+          <span class="mock-line w80"></span><span class="mock-line w60"></span>
+          <div class="mock-btns"><span class="mock-cta lg">Book a free demo</span><span class="mock-ghost">View fees</span></div>
+        </div>
+        <div class="mock-art" aria-hidden="true"></div>
+      </div>
+      <div class="mock-cards"><span></span><span></span><span></span></div>
+
+      <div class="widget" id="widget">
+        <div class="widget__panel" id="wpanel" role="dialog" aria-label="Chat with DemoPrep Academy" hidden>
+          <div class="widget__head">
+            <span class="brand__mark sm" aria-hidden="true"><svg viewBox="0 0 32 32" width="24" height="24"><rect width="32" height="32" rx="9" fill="currentColor"/><path d="M10 9.5h5.2c4.3 0 7.3 2.7 7.3 6.5s-3 6.5-7.3 6.5H10z" fill="none" stroke="var(--mark-ink)" stroke-width="2.6"/></svg></span>
+            <div><strong>DemoPrep Assistant</strong><small><span class="live"></span>Answers instantly · sample data</small></div>
+            <button class="icon-btn sm" id="wclose" aria-label="Close chat"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          </div>
+          <ol class="thread thread--mini" id="wthread" aria-live="polite"></ol>
+          <form class="composer composer--mini" id="wcomposer">
+            <label class="sr-only" for="winput">Ask a question</label>
+            <textarea id="winput" rows="1" placeholder="Type your question…"></textarea>
+            <button class="send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
+          </form>
+        </div>
+        <div class="widget__nudge" id="wnudge">Questions about fees or batches? <b>Ask me</b></div>
+        <button class="widget__bubble" id="wbubble" aria-label="Open chat" aria-expanded="false" aria-controls="wpanel">
+          <svg class="i-chat" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4A8 8 0 1 1 20 12z"/></svg>
+          <svg class="i-x" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <footer class="credit credit--site">Built by <strong>Mohd Suhail Idrisi</strong> · <a href="https://github.com/suhailult777" target="_blank" rel="noopener">GitHub</a> · <a href="mailto:suhailult123@gmail.com">suhailult123@gmail.com</a></footer>
+</main>
+
+<dialog class="docs" id="docs" aria-labelledby="docs-title">
+  <div class="docs__head"><div><p class="eyebrow">Knowledge base</p><h2 id="docs-title">Sample documents</h2></div><button class="icon-btn" id="close-docs" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <p class="docs__note">Made-up content for a fictional institute. A real deployment would use your brochure, fee sheet, FAQs or website.</p>
+  <div id="docs-body"></div>
+</dialog>
+
+<script src="docs.js"></script>
+<script src="rag.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
